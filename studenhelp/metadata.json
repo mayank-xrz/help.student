@@ -1,0 +1,6 @@
+{
+  "name": "PathFinder",
+  "description": "An elegant Old Money aesthetic career guidance platform for Indian students with custom rule-based roadmaps.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

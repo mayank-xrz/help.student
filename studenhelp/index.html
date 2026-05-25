@@ -1,0 +1,2364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PathFinder — Indian Student Career Guidance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+  <style>
+    /* ==========================================
+       OLD MONEY AESTHETIC — DESIGN SYSTEM
+       ========================================== */
+    :root {
+      --bg-ivory: #F5F0E8;
+      --bg-card: #FFFFFF;
+      --accent-dark: #1B3A2D; /* Forest Green */
+      --accent-gold: #C9A84C; /* Classical Gold */
+      --text-primary: #2C2C2C;
+      --text-muted: #6B6155;
+      --border-color: #E5DDD0;
+      --focus-ring: rgba(201, 168, 76, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-ivory);
+      /* Fine-grained paper-texture noise overlay */
+      background-image: radial-gradient(rgba(27, 58, 45, 0.015) 1px, transparent 0), url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='transparent' filter='url(%23noiseFilter)' opacity='0.012'/%3E%3C/svg%3E");
+      color: var(--text-primary);
+      font-family: 'DM Sans', Georgia, system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* Resume / Progress Banner */
+    #resume-banner {
+      display: none;
+      width: 100%;
+      background-color: var(--accent-dark);
+      color: var(--bg-ivory);
+      text-align: center;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      border-bottom: 2px solid var(--accent-gold);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      font-family: 'DM Sans', sans-serif;
+    }
+    #resume-banner button {
+      background: transparent;
+      border: 1px solid var(--accent-gold);
+      color: var(--accent-gold);
+      padding: 4px 12px;
+      margin-left: 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    #resume-banner button:hover {
+      background-color: var(--accent-gold);
+      color: var(--accent-dark);
+    }
+    #resume-banner button.secondary {
+      border-color: #A09588;
+      color: #A09588;
+    }
+    #resume-banner button.secondary:hover {
+      background-color: #A09588;
+      color: var(--accent-dark);
+    }
+
+    /* Main Container */
+    .app-viewport {
+      width: 100%;
+      max-width: 720px;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+
+    /* Header Progress Indicators */
+    .header-navigator {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+    .brand-accent {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--accent-dark);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .brand-accent span {
+      color: var(--accent-gold);
+    }
+    .progress-bar {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      list-style-type: none;
+    }
+    .progress-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: 1px solid var(--accent-gold);
+      background-color: transparent;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .progress-dot.active {
+      background-color: var(--accent-gold);
+      transform: scale(1.3);
+      box-shadow: 0 0 6px var(--accent-gold);
+    }
+    .progress-dot.completed {
+      background-color: var(--accent-dark);
+      border-color: var(--accent-dark);
+    }
+
+    /* Step Cards Frame */
+    .step-container {
+      display: none;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+    .step-container.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 32px 24px;
+      box-shadow: 0 6px 20px rgba(27, 58, 45, 0.02);
+      margin-bottom: 24px;
+    }
+
+    @media (min-width: 480px) {
+      .card {
+        padding: 40px 36px;
+      }
+    }
+
+    /* Typography inside Forms */
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem;
+      font-weight: 500;
+      color: var(--accent-dark);
+      text-align: center;
+      margin-bottom: 8px;
+      line-height: 1.25;
+    }
+    .tagline {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-style: italic;
+      color: var(--text-muted);
+      text-align: center;
+      font-size: 1.15rem;
+      margin-bottom: 32px;
+    }
+    h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.65rem;
+      font-weight: 500;
+      color: var(--accent-dark);
+      margin-bottom: 24px;
+      line-height: 1.3;
+      position: relative;
+    }
+    .decorated-h2::after {
+      content: '';
+      display: block;
+      width: 40px;
+      height: 2px;
+      background-color: var(--accent-gold);
+      margin-top: 10px;
+    }
+
+    .subtitle-text {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-top: -16px;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    /* Grid Options for Multi-choice */
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media (min-width: 600px) {
+      .options-grid.two-cols {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .option-card {
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 18px 20px;
+      background-color: var(--bg-card);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      text-align: left;
+    }
+    .option-card:hover {
+      border-color: var(--accent-gold);
+      background-color: rgba(245, 240, 232, 0.3);
+    }
+    .option-card.selected {
+      border-color: var(--accent-dark);
+      border-width: 1.5px;
+      background-color: rgba(27, 58, 45, 0.02);
+      box-shadow: 0 0 0 1px var(--accent-dark);
+    }
+    .option-roman {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: var(--accent-gold);
+      width: 30px;
+      flex-shrink: 0;
+    }
+    .option-meta h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      font-weight: 500;
+      color: var(--accent-dark);
+      margin-bottom: 4px;
+    }
+    .option-meta p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Form Fields and Inputs */
+    .form-group {
+      margin-bottom: 22px;
+    }
+    .field-label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--accent-dark);
+      margin-bottom: 8px;
+    }
+    .text-input {
+      width: 100%;
+      background-color: #FAF8F5;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 12px 16px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      color: var(--text-primary);
+      transition: all 0.22s ease;
+    }
+    .text-input:focus {
+      outline: none;
+      background-color: #FFFFFF;
+      border-color: var(--accent-gold);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+
+    /* Segmented Board Buttons */
+    .board-selector {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    .board-btn {
+      flex: 1;
+      background-color: #FAF8F5;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 12px 6px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+    .board-btn:hover {
+      border-color: var(--accent-gold);
+    }
+    .board-btn.selected {
+      background-color: var(--accent-dark);
+      color: var(--bg-ivory);
+      border-color: var(--accent-dark);
+    }
+
+    /* Marks Inputs Layout Grid */
+    .marks-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 480px) {
+      .marks-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .marks-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .marks-input-wrapper {
+      position: relative;
+    }
+    .marks-input-wrapper input {
+      padding-right: 32px;
+    }
+    .marks-input-wrapper .percent-sign {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    /* Arts Multiple Selection Wrapper */
+    .arts-checkboxes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .checkbox-card {
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 10px 14px;
+      background-color: #FAF8F5;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.88rem;
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+    }
+    .checkbox-card:hover {
+      border-color: var(--accent-gold);
+    }
+    .checkbox-card input {
+      accent-color: var(--accent-dark);
+    }
+    .checkbox-card.checked {
+      border-color: var(--accent-dark);
+      background-color: rgba(27, 58, 45, 0.02);
+    }
+
+    /* Searchable Grouped Dropdown for Courses */
+    .search-dropdown-container {
+      position: relative;
+      margin-bottom: 24px;
+    }
+    .search-input-field {
+      width: 100%;
+      padding: 12px 16px;
+      background: #FAF8F5;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+    }
+    .search-input-field:focus {
+      outline: none;
+      border-color: var(--accent-gold);
+      background: #FFF;
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+    .dropdown-box {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      max-height: 240px;
+      background: #FFFFFF;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      overflow-y: auto;
+      z-index: 50;
+      display: none;
+    }
+    .dropdown-group-title {
+      background-color: #FAF6F0;
+      padding: 6px 14px;
+      font-family: 'Playfair Display', serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--accent-dark);
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+    }
+    .dropdown-item {
+      padding: 10px 18px;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .dropdown-item:hover {
+      background-color: var(--bg-ivory);
+      color: var(--accent-dark);
+    }
+
+    /* Honesty Check Card Style */
+    .honesty-card {
+      background-color: #FAF8F3;
+      border: 1px dashed var(--accent-gold);
+      border-radius: 6px;
+      padding: 20px;
+      margin-top: 24px;
+      text-align: center;
+    }
+    .honesty-question {
+      font-style: italic;
+      color: var(--accent-dark);
+      font-size: 0.95rem;
+      margin-bottom: 14px;
+      font-family: 'Playfair Display', serif;
+      font-weight: 500;
+    }
+    .honesty-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+    .honesty-btn {
+      background: #FFFFFF;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 6px 16px;
+      font-size: 0.82rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .honesty-btn:hover {
+      border-color: var(--accent-gold);
+      color: var(--accent-dark);
+    }
+    .honesty-btn.active {
+      background-color: var(--accent-dark);
+      border-color: var(--accent-dark);
+      color: var(--bg-ivory);
+    }
+    .honesty-feedback {
+      margin-top: 12px;
+      font-size: 0.88rem;
+      color: var(--accent-gold);
+      font-style: italic;
+      height: 20px;
+      transition: opacity 0.3s ease;
+    }
+
+    /* Buttons Panel */
+    .button-group {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 12px;
+    }
+    .btn {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      padding: 14px 28px;
+      font-size: 0.95rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid transparent;
+    }
+    .btn-primary {
+      background-color: var(--accent-dark);
+      color: var(--bg-ivory);
+      flex-grow: 1;
+    }
+    .btn-primary:hover {
+      background-color: #244b3b;
+      border-color: var(--accent-gold);
+    }
+    .btn-primary:disabled {
+      background-color: #B2AAA0;
+      color: #E2DBD3;
+      border-color: transparent;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      background-color: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--accent-dark);
+      padding-left: 18px;
+      padding-right: 18px;
+    }
+    .btn-secondary:hover {
+      background-color: #FAF6F0;
+      border-color: var(--accent-gold);
+    }
+
+    /* SVG Goal Icons Styles */
+    .goal-icon {
+      width: 32px;
+      height: 32px;
+      stroke: var(--accent-dark);
+      flex-shrink: 0;
+    }
+
+    /* Loading Screen State */
+    #loading-state {
+      display: none;
+      text-align: center;
+      padding: 60px 20px;
+    }
+    .loading-pulse-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin: 24px 0;
+    }
+    .pulse-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--accent-gold);
+      animation: bouncePulse 1.4s infinite ease-in-out both;
+    }
+    .pulse-dot:nth-child(1) { animation-delay: -0.32s; }
+    .pulse-dot:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes bouncePulse {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1.0); }
+    }
+    #loading-state h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.45rem;
+      color: var(--accent-dark);
+      margin-bottom: 8px;
+    }
+    #loading-state p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ==========================================
+       RESULTS PAGE — SCHOLARLY ROADMAP
+       ========================================== */
+    #results-dashboard {
+      display: none;
+    }
+    .results-hero {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .results-hero h1 {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+    }
+    .results-hero p {
+      color: var(--text-muted);
+      font-style: italic;
+      font-family: 'Playfair Display', serif;
+    }
+
+    .roadmap-section-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-left: 5px solid var(--accent-gold);
+      border-radius: 6px;
+      padding: 24px 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 12px rgba(27, 58, 45, 0.02);
+    }
+    @media (min-width: 480px) {
+      .roadmap-section-card {
+        padding: 30px 28px;
+      }
+    }
+
+    .roadmap-section-card h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent-dark);
+      margin-bottom: 14px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      border-bottom: 1px solid rgba(229, 221, 208, 0.5);
+      padding-bottom: 8px;
+    }
+
+    .roadmap-body {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: var(--text-primary);
+    }
+
+    /* Phases layout inside recommended path card */
+    .timeline-phase {
+      margin-bottom: 18px;
+    }
+    .timeline-phase:last-child {
+      margin-bottom: 0;
+    }
+    .phase-badge {
+      display: inline-block;
+      font-family: 'Playfair Display', serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent-dark);
+      background-color: #FAF4EB;
+      border: 1px solid #EADECB;
+      border-radius: 4px;
+      padding: 2px 10px;
+      margin-bottom: 6px;
+    }
+    .phase-content {
+      padding-left: 6px;
+    }
+
+    /* Results actions */
+    .results-actions {
+      display: flex;
+      gap: 16px;
+      margin-top: 32px;
+      margin-bottom: 48px;
+    }
+    .btn-pdf {
+      background-color: var(--accent-dark);
+      color: var(--bg-ivory);
+      flex: 1;
+    }
+    .btn-pdf:hover {
+      background-color: #11251c;
+      border-color: var(--accent-gold);
+    }
+    .btn-restart {
+      background-color: #FAF8F5;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+    }
+    .btn-restart:hover {
+      border-color: var(--accent-dark);
+      color: var(--accent-dark);
+    }
+
+    /* Reaching Out Panel Instagram Card */
+    .instagram-reach-card {
+      border: 1px solid var(--accent-gold);
+      background-color: #FAF9F5;
+      border-radius: 8px;
+      padding: 30px 24px;
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .instagram-reach-card h4 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      color: var(--accent-dark);
+      margin-bottom: 12px;
+    }
+    .instagram-reach-card p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 18px;
+      line-height: 1.6;
+    }
+    .instagram-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--accent-gold);
+      text-decoration: none;
+      font-family: 'Playfair Display', serif;
+      font-weight: 700;
+      font-size: 1.15rem;
+      transition: color 0.2s ease;
+    }
+    .instagram-link:hover {
+      color: var(--accent-dark);
+    }
+    .instagram-link svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    /* Universal Global Footer */
+    .footer-global {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 30px 0;
+      margin-top: auto;
+      border-top: 1px solid rgba(229, 221, 208, 0.4);
+      width: 100%;
+    }
+    .footer-global span {
+      color: var(--accent-gold);
+    }
+
+    /* Validation indicator feedback */
+    .validation-alert {
+      display: none;
+      color: #9E2A2B;
+      font-size: 0.85rem;
+      margin-top: 4px;
+      margin-bottom: 12px;
+      font-style: italic;
+    }
+
+    /* Print optimization stylesheet rule */
+    @media print {
+      body {
+        background-color: #FFFFFF !important;
+        background-image: none !important;
+        color: #000000 !important;
+        font-size: 11pt !important;
+        padding: 0 !important;
+      }
+      .app-viewport {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .header-navigator,
+      #resume-banner,
+      .results-actions,
+      .back-btn-container,
+      .instagram-reach-card,
+      .footer-global,
+      .btn {
+        display: none !important;
+      }
+      #results-dashboard {
+        display: block !important;
+      }
+      .roadmap-section-card {
+        box-shadow: none !important;
+        border: 1px solid #777 !important;
+        border-left: 6px solid #1B3A2D !important;
+        padding: 18px !important;
+        page-break-inside: avoid !important;
+        margin-bottom: 16px !important;
+        background: #FFFFFF !important;
+      }
+      h1 {
+        font-size: 22pt !important;
+        color: #1B3A2D !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Resume Session Banner notification -->
+  <div id="resume-banner">
+    Welcome back, <span id="resume-user-name"></span>. We found an ongoing advising session.
+    <button onclick="resumeCachedSession()">Resume Journey</button>
+    <button class="secondary" onclick="discardCachedSession()">Start Anew</button>
+  </div>
+
+  <div class="app-viewport">
+    
+    <!-- Header visual element -->
+    <header class="header-navigator no-print">
+      <div class="brand-accent">PathFinder <span>♦</span> Advisor</div>
+      <ul class="progress-bar">
+        <li class="progress-dot active" data-step="1"></li>
+        <li class="progress-dot" data-step="2"></li>
+        <li class="progress-dot" data-step="3"></li>
+        <li class="progress-dot" data-step="4"></li>
+        <li class="progress-dot" data-step="5"></li>
+        <li class="progress-dot" data-step="6"></li>
+      </ul>
+    </header>
+
+    <main class="main-stage">
+
+      <!-- ==========================================
+           STEP 1: WELCOME SCREEN
+           ========================================== -->
+      <section class="step-container active" data-step="1">
+        <div class="card text-center" style="text-align: center;">
+          <h1>PathFinder</h1>
+          <p class="tagline">Your path. Defined with clarity.</p>
+          
+          <div class="form-group" style="max-width: 320px; margin: 0 auto 24px auto;">
+            <label class="field-label" for="user-name">What shall we call you?</label>
+            <input type="text" id="user-name" class="text-input" placeholder="Enter your name" style="text-align: center;" required autocomplete="off">
+            <div id="step1-validation" class="validation-alert">Please share your name with us.</div>
+          </div>
+
+          <div style="margin-top: 16px;">
+            <button class="btn btn-primary" onclick="proceedToStep2()" style="min-width: 180px;">Begin Journey →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           STEP 2: EDUCATION STAGE
+           ========================================== -->
+      <section class="step-container" data-step="2">
+        <div class="card">
+          <h2 class="decorated-h2" id="step2-greeting">Where are you in your journey?</h2>
+          <p class="subtitle-text">Your education profile allows us to align academic timelines precisely.</p>
+
+          <div class="options-grid">
+            <div class="option-card" data-edu="10th" onclick="selectEduLevel(this)">
+              <div class="option-roman">I</div>
+              <div class="option-meta">
+                <h3>Class 10th</h3>
+                <p>Preparing for secondary board or selecting your streams.</p>
+              </div>
+            </div>
+
+            <div class="option-card" data-edu="12th" onclick="selectEduLevel(this)">
+              <div class="option-roman">II</div>
+              <div class="option-meta">
+                <h3>Class 12th</h3>
+                <p>Currently in or recently finished high school.</p>
+              </div>
+            </div>
+
+            <div class="option-card" data-edu="gap" onclick="selectEduLevel(this)">
+              <div class="option-roman">III</div>
+              <div class="option-meta">
+                <h3>Gap Year</h3>
+                <p>Taking structured time off post high school to study or reset.</p>
+              </div>
+            </div>
+
+            <div class="option-card" data-edu="diploma_pursuing" onclick="selectEduLevel(this)">
+              <div class="option-roman">IV</div>
+              <div class="option-meta">
+                <h3>Pursuing Diploma</h3>
+                <p>Enrolled in a polytechnic or specialized vocational diploma stream.</p>
+              </div>
+            </div>
+
+            <div class="option-card" data-edu="diploma_completed" onclick="selectEduLevel(this)">
+              <div class="option-roman">V</div>
+              <div class="option-meta">
+                <h3>Completed Diploma</h3>
+                <p>Finished standard polytechnic or specialized diploma course.</p>
+              </div>
+            </div>
+
+            <div class="option-card" data-edu="degree_pursuing" onclick="selectEduLevel(this)">
+              <div class="option-roman">VI</div>
+              <div class="option-meta">
+                <h3>Pursuing Degree</h3>
+                <p>Currently studying in college (Graduate/Doctorate).</p>
+              </div>
+            </div>
+
+            <div class="option-card" data-edu="degree_completed" onclick="selectEduLevel(this)">
+              <div class="option-roman">VII</div>
+              <div class="option-meta">
+                <h3>Completed Degree</h3>
+                <p>Successfully graduated and seeking professional execution.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="button-group">
+            <button class="btn btn-secondary" onclick="goToStep(1)">← Back</button>
+            <button class="btn btn-primary" id="btn-step2-next" disabled onclick="proceedToStep3()">Continue →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           STEP 3: CONDITIONAL BRANCHING FORM
+           ========================================== -->
+      <section class="step-container" data-step="3">
+        <div class="card" id="step3-card-inner">
+          <!-- Rendered programmatically by renderStep3Formula() inside client script -->
+        </div>
+      </section>
+
+      <!-- ==========================================
+           STEP 4: GOAL SELECTION
+           ========================================== -->
+      <section class="step-container" data-step="4">
+        <div class="card">
+          <h2 class="decorated-h2" id="step4-greeting">What does success look like for you?</h2>
+          <p class="subtitle-text">Select the core vision for your future, and we will formulate a viable roadmap around it.</p>
+
+          <div class="options-grid two-cols">
+            
+            <div class="option-card" data-goal="high_paying" onclick="selectGoal(this)">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="goal-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+              <div class="option-meta">
+                <h3>High-Paying Job</h3>
+                <p>Financial abundance and stellar premium salaries.</p>
+              </div>
+            </div>
+
+            <div class="option-card" data-goal="startup" onclick="selectGoal(this)">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="goal-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 0 1-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 0 0 6.16-12.12A14.98 14.98 0 0 0 9.631 8.41m5.96 5.96a14.962 14.962 0 0 1-10.533 4.145m10.533-4.145a14.975 14.975 0 0 0-4.145-10.533m0 0a14.962 14.962 0 0 0-10.533 4.145M15.59 4.37a2.51 2.51 0 1 1-5.02 0 2.51 2.51 0 0 1 5.02 0Z" /></svg>
+              <div class="option-meta">
+                <h3>Build a Startup</h3>
+                <p>Venture building and launching your own business.</p>
+              </div>
+            </div>
+
+            <div class="option-card" data-goal="switch" onclick="selectGoal(this)">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="goal-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg>
+              <div class="option-meta">
+                <h3>Switch My Field</h3>
+                <p>Transition laterally into a completely different sphere.</p>
+              </div>
+            </div>
+
+            <div class="option-card" data-goal="higher_studies" onclick="selectGoal(this)">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="goal-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.57 50.57 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.902 59.902 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" /></svg>
+              <div class="option-meta">
+                <h3>Higher Studies / Masters</h3>
+                <p>Expand professional credentials and graduate academies.</p>
+              </div>
+            </div>
+
+            <div class="option-card" data-goal="govt" onclick="selectGoal(this)">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="goal-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" /></svg>
+              <div class="option-meta">
+                <h3>Government Exam</h3>
+                <p>Targeting Civil Services (UPSC, SSC, Banking, Defence).</p>
+              </div>
+            </div>
+
+            <div class="option-card" data-goal="abroad" onclick="selectGoal(this)">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="goal-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9s2.015-9 4.5-9m0 18c-1.157 0-2.07-.54-2.66-1.428m0 0A9.01 9.01 0 0 1 3.284 12V10.5m1.376-7.5a9.006 9.006 0 0 1 14.68 0M12 3c1.157 0 2.07.54 2.66 1.428m0 0A9.01 9.01 0 0 1 20.716 12V10.5m-5.342 5.072A9.01 9.01 0 0 1 12 16.5c-1.157 0-2.07-.54-2.66-1.428m0 0A9.01 9.01 0 0 1 3.284 12V10.5" /></svg>
+              <div class="option-meta">
+                <h3>Study or Work Abroad</h3>
+                <p>Crossing international borders to work/study globally.</p>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="button-group">
+            <button class="btn btn-secondary" onclick="goToStep(3)">← Back</button>
+            <button class="btn btn-primary" id="btn-step4-next" disabled onclick="proceedToStep5()">Continue →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           STEP 5: REFINE GOAL
+           ========================================== -->
+      <section class="step-container" data-step="5">
+        <div class="card" id="step5-card-inner">
+          <!-- Rendered programmatically by renderStep5Formula() inside client script -->
+        </div>
+      </section>
+
+      <!-- ==========================================
+           STEP 6: RESULTS LOADING VIEW
+           ========================================== -->
+      <section class="step-container" data-step="6">
+        <div class="card" id="loading-state">
+          <div class="loading-pulse-dots">
+            <div class="pulse-dot"></div>
+            <div class="pulse-dot"></div>
+            <div class="pulse-dot"></div>
+          </div>
+          <h3 id="loading-headline">Analyzing academic alignments...</h3>
+          <p id="loading-subline">Applying competitive Indian curriculum algorithms.</p>
+        </div>
+
+        <!-- Dynamic advice canvas -->
+        <div id="results-dashboard">
+          
+          <div class="results-hero">
+            <h1 id="results-title">Your Scholarly Blueprint</h1>
+            <p id="results-subtitle">Prepared in absolute confidentiality by PathFinder.</p>
+          </div>
+
+          <!-- Section 1 -->
+          <div class="roadmap-section-card">
+            <h3>I. What I See In You</h3>
+            <div class="roadmap-body" id="res-what-i-see"></div>
+          </div>
+
+          <!-- Section 2 -->
+          <div class="roadmap-section-card">
+            <h3>II. Your Recommended Path</h3>
+            <div class="roadmap-body" id="res-recommended-path">
+              <!-- Chronological pathways -->
+            </div>
+          </div>
+
+          <!-- Section 3 -->
+          <div class="roadmap-section-card">
+            <h3>III. Financial Capital Requirements</h3>
+            <div class="roadmap-body" id="res-financial"></div>
+          </div>
+
+          <!-- Section 4 -->
+          <div class="roadmap-section-card">
+            <h3>IV. Time & Grit Calibration</h3>
+            <div class="roadmap-body" id="res-time-grit"></div>
+          </div>
+
+          <!-- Section 5 -->
+          <div class="roadmap-section-card">
+            <h3>V. Strategic Threats & Fallbacks</h3>
+            <div class="roadmap-body" id="res-threats"></div>
+          </div>
+
+          <!-- Section 6 -->
+          <div class="roadmap-section-card">
+            <h3>VI. A Mentor's Note</h3>
+            <div class="roadmap-body" id="res-mentors-note" style="font-style: italic;"></div>
+          </div>
+
+          <!-- Reach Out Instance -->
+          <div class="instagram-reach-card no-print">
+            <h4>Need specialized counsel?</h4>
+            <p>Algorithms operate in general ranges. If you need bespoke personal coaching or want to ask direct questions, click below to initiate a direct conversation with Mayank.</p>
+            <a href="https://instagram.com/mayank.rz1" class="instagram-link" target="_blank" rel="noopener noreferrer">
+              Reach Out on Instagram: @mayank.rz1
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </a>
+          </div>
+
+          <div class="results-actions no-print">
+            <button class="btn btn-restart" onclick="restartCoreProcess()">Start Anew</button>
+            <button class="btn btn-pdf" onclick="window.print()">Download as PDF →</button>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Global Footer -->
+    <footer class="footer-global no-print">
+      Made with <span>♦</span> PathFinder Advisor
+    </footer>
+
+  </div>
+
+  <script>
+    /* ==========================================
+       RULE-BASED INTELLIGENCE ADVISOR ENGINE
+       ========================================== */
+
+    // Core User Model
+    let userProfile = {
+      name: "",
+      educationLevel: "", 
+      board: "",
+      stream: "",
+      marks: {},
+      strongestSubject: "",
+      honestyCheck: "",
+      degreeYear: "",
+      degreeCourse: "",
+      degreeGrade: "",
+      goal: "",
+      refinedGoal: "",
+      targetField: ""
+    };
+
+    let currentStep = 1;
+
+    // Load saved sessions on screen mount
+    window.addEventListener("DOMContentLoaded", () => {
+      const savedProfile = localStorage.getItem("pathfinder_profile");
+      const savedStep = localStorage.getItem("pathfinder_step");
+      
+      if (savedProfile && savedStep && parseInt(savedStep) > 1) {
+        let tempProfile = JSON.parse(savedProfile);
+        if (tempProfile.name) {
+          document.getElementById("resume-user-name").textContent = tempProfile.name;
+          document.getElementById("resume-banner").style.display = "block";
+        }
+      }
+    });
+
+    function resumeCachedSession() {
+      const savedProfile = localStorage.getItem("pathfinder_profile");
+      const savedStep = localStorage.getItem("pathfinder_step");
+      
+      if (savedProfile && savedStep) {
+        userProfile = JSON.parse(savedProfile);
+        document.getElementById("resume-banner").style.display = "none";
+        
+        // Populate Step 1 element just in case
+        document.getElementById("user-name").value = userProfile.name;
+        
+        // Go straight to the saved step
+        goToStep(parseInt(savedStep));
+      }
+    }
+
+    function discardCachedSession() {
+      localStorage.removeItem("pathfinder_profile");
+      localStorage.removeItem("pathfinder_step");
+      document.getElementById("resume-banner").style.display = "none";
+      restartCoreProcess();
+    }
+
+    function saveState() {
+      localStorage.setItem("pathfinder_profile", JSON.stringify(userProfile));
+      localStorage.setItem("pathfinder_step", currentStep);
+    }
+
+    // Step Transition Handler
+    function goToStep(nextStep) {
+      const currentElem = document.querySelector(`.step-container[data-step="${currentStep}"]`);
+      const nextElem = document.querySelector(`.step-container[data-step="${nextStep}"]`);
+      
+      if (currentElem) {
+        currentElem.style.opacity = "0";
+        currentElem.style.transform = "translateY(-10px)";
+        
+        setTimeout(() => {
+          currentElem.classList.remove("active");
+          showNext();
+        }, 220);
+      } else {
+        showNext();
+      }
+
+      function showNext() {
+        currentStep = nextStep;
+        saveState();
+
+        // Adjust active indicators
+        document.querySelectorAll(".progress-dot").forEach((dot, index) => {
+          const stepNum = index + 1;
+          if (stepNum === currentStep) {
+            dot.className = "progress-dot active";
+          } else if (stepNum < currentStep) {
+            dot.className = "progress-dot completed";
+          } else {
+            dot.className = "progress-dot";
+          }
+        });
+
+        if (nextStep === 3) {
+          renderStep3Formula();
+        } else if (nextStep === 5) {
+          renderStep5Formula();
+        } else if (nextStep === 6) {
+          executeAdviceFormulation();
+        }
+
+        if (nextElem) {
+          nextElem.classList.add("active");
+          nextElem.offsetHeight; // trigger reflow
+          nextElem.style.opacity = "1";
+          nextElem.style.transform = "translateY(0)";
+        }
+
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }
+
+    // Welcomers Validation
+    function proceedToStep2() {
+      const nameInput = document.getElementById("user-name").value.trim();
+      const validationAlert = document.getElementById("step1-validation");
+      
+      if (nameInput.length < 2) {
+        validationAlert.style.display = "block";
+        return;
+      }
+      
+      validationAlert.style.display = "none";
+      userProfile.name = nameInput;
+      
+      // Update Step displays dynamically
+      document.getElementById("step2-greeting").textContent = `Hello, ${nameInput}. Where are you in your journey?`;
+      goToStep(2);
+    }
+
+    // Edu selection togglers
+    function selectEduLevel(element) {
+      document.querySelectorAll("[data-step='2'] .option-card").forEach(el => el.classList.remove("selected"));
+      element.classList.add("selected");
+      userProfile.educationLevel = element.getAttribute("data-edu");
+      document.getElementById("btn-step2-next").disabled = false;
+    }
+
+    function proceedToStep3() {
+      goToStep(3);
+    }
+
+    // ==========================================
+    // STEP 3 ENGINE — DYNAMIC FORM INJECTIONS
+    // ==========================================
+    function renderStep3Formula() {
+      const card = document.getElementById("step3-card-inner");
+      const lvl = userProfile.educationLevel;
+      let html = "";
+
+      if (lvl === "10th") {
+        html = `
+          <h2 class="decorated-h2">Tell us about your Class 10th parameters.</h2>
+          <p class="subtitle-text">We calibrate stream alignments based on relative subject mastery.</p>
+          
+          <div class="form-group">
+            <span class="field-label">Board of Examination</span>
+            <div class="board-selector">
+              <button type="button" class="board-btn selected" onclick="toggleBoardBtn(this, 'CBSE')">CBSE</button>
+              <button type="button" class="board-btn" onclick="toggleBoardBtn(this, 'ICSE')">ICSE</button>
+              <button type="button" class="board-btn" onclick="toggleBoardBtn(this, 'State Board')">State Board</button>
+            </div>
+          </div>
+
+          <p class="field-label" style="margin-bottom: 12px;">Subject Scores / Projections</p>
+          <div class="marks-grid">
+            <div class="marks-item">
+              <label class="field-label" style="font-size: 0.82rem; color: var(--text-muted);">Mathematics</label>
+              <div class="marks-input-wrapper">
+                <input type="number" class="text-input" id="mark-math" min="0" max="100" placeholder="85" oninput="validateScoreRange(this)">
+                <span class="percent-sign">%</span>
+              </div>
+            </div>
+            <div class="marks-item">
+              <label class="field-label" style="font-size: 0.82rem; color: var(--text-muted);">Science</label>
+              <div class="marks-input-wrapper">
+                <input type="number" class="text-input" id="mark-science" min="0" max="100" placeholder="82" oninput="validateScoreRange(this)">
+                <span class="percent-sign">%</span>
+              </div>
+            </div>
+            <div class="marks-item">
+              <label class="field-label" style="font-size: 0.82rem; color: var(--text-muted);">English</label>
+              <div class="marks-input-wrapper">
+                <input type="number" class="text-input" id="mark-english" min="0" max="100" placeholder="88" oninput="validateScoreRange(this)">
+                <span class="percent-sign">%</span>
+              </div>
+            </div>
+            <div class="marks-item">
+              <label class="field-label" style="font-size: 0.82rem; color: var(--text-muted);">Social Science</label>
+              <div class="marks-input-wrapper">
+                <input type="number" class="text-input" id="mark-social" min="0" max="100" placeholder="80" oninput="validateScoreRange(this)">
+                <span class="percent-sign">%</span>
+              </div>
+            </div>
+            <div class="marks-item" style="grid-column: span 2;">
+              <label class="field-label" style="font-size: 0.82rem; color: var(--text-muted);">Hindi / Regional Subject</label>
+              <div class="marks-input-wrapper">
+                <input type="number" class="text-input" id="mark-lang" min="0" max="100" placeholder="78" oninput="validateScoreRange(this)">
+                <span class="percent-sign">%</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="step3-validation-alert" class="validation-alert">Ensure all subject values contain valid ranges between 0 and 100.</div>
+
+          <div class="button-group">
+            <button class="btn btn-secondary" onclick="goToStep(2)">← Back</button>
+            <button class="btn btn-primary" onclick="validateAndSaveStep3_10th()">Continue →</button>
+          </div>
+        `;
+        userProfile.board = "CBSE"; // preset default
+      }
+      else if (lvl === "12th" || lvl === "gap") {
+        html = `
+          <h2 class="decorated-h2">Share your academic configurations.</h2>
+          <p class="subtitle-text">Your streams dictate competitive eligibility in national exams.</p>
+
+          <div class="form-group">
+            <span class="field-label">Board of Examination</span>
+            <div class="board-selector">
+              <button type="button" class="board-btn selected" onclick="toggleBoardBtn(this, 'CBSE')">CBSE</button>
+              <button type="button" class="board-btn" onclick="toggleBoardBtn(this, 'ICSE')">ICSE</button>
+              <button type="button" class="board-btn" onclick="toggleBoardBtn(this, 'State Board')">State Board</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="field-label" for="stream-selector">Active Academic Stream</label>
+            <select class="text-input" id="stream-selector" onchange="toggleMarksFormBasedOnStream(this.value)">
+              <option value="" disabled selected>Select your stream</option>
+              <option value="PCM">PCM (Physics, Chem, Maths)</option>
+              <option value="PCB">PCB (Physics, Chem, Biology)</option>
+              <option value="PCMB">PCMB (Quad Science Core)</option>
+              <option value="Commerce+Maths">Commerce with Mathematics</option>
+              <option value="Commerce-Maths">Commerce without Mathematics</option>
+              <option value="Arts">Arts / Humanities</option>
+            </select>
+          </div>
+
+          <!-- Dynamic Streams Output Box -->
+          <div id="stream-dynamic-marks-substage"></div>
+
+          <!-- Compliance Honesty Container -->
+          <div class="honesty-card" id="honesty-check-container" style="display: none;">
+            <p class="honesty-question">Quick honesty check — did you estimate these marks, or actually secure them?</p>
+            <div class="honesty-buttons">
+              <button type="button" class="honesty-btn" onclick="selectHonesty('honest', this)">I studied and earned them</button>
+              <button type="button" class="honesty-btn" onclick="selectHonesty('peeked', this)">I may have estimated slightly</button>
+            </div>
+            <div class="honesty-feedback" id="honesty-reply"></div>
+          </div>
+
+          <div id="step3-validation-alert" class="validation-alert">Please complete all fields with correct standard ranges (0-100%).</div>
+
+          <div class="button-group" style="margin-top:24px;">
+            <button class="btn btn-secondary" onclick="goToStep(2)">← Back</button>
+            <button class="btn btn-primary" id="btn-step3-next" disabled onclick="validateAndSaveStep3_12th()">Continue →</button>
+          </div>
+        `;
+        userProfile.board = "CBSE"; // preset default
+      }
+      else { // College / Completed Degrees / Diplomas
+        html = `
+          <h2 class="decorated-h2">Your College / Diploma Trajectory</h2>
+          <p class="subtitle-text">Academic parameters allow us to analyze lateral industry entries or postgrad options.</p>
+
+          <div class="form-group">
+            <label class="field-label" for="degree-year">Current academic status / year</label>
+            <select class="text-input" id="degree-year">
+              <option value="1st Year">1st Year Undergraduate / Diploma</option>
+              <option value="2nd Year">2nd Year Undergraduate / Diploma</option>
+              <option value="3rd Year">3rd Year Undergraduate / Diploma</option>
+              <option value="4th Year">4th Year Undergraduate (Engineering, etc.)</option>
+              <option value="Final Year">Final / Pre-final Year</option>
+              <option value="Completed">Graduated / Degree or Diploma Completed</option>
+            </select>
+          </div>
+
+          <!-- Searchable grouped dropdown is designed here -->
+          <div class="form-group">
+            <label class="field-label" for="custom-course-search">What specific Degree or Diploma Course?</label>
+            <div class="search-dropdown-container">
+              <input type="text" id="custom-course-search" class="text-input" placeholder="Type to search e.g. Polytechnic, B.Tech CS, MBA" oninput="filterCourseDropdown(this.value)" onclick="showCourseDropdown()" autocomplete="off">
+              <div class="dropdown-box" id="grouped-course-options">
+                <!-- Group 1 -->
+                <div class="dropdown-group-title">Engineering</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Tech CS')">B.Tech Computer Science</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Tech IT')">B.Tech Information Tech</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Tech ECE')">B.Tech Electronics & Comm</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Tech EEE')">B.Tech Electrical & Electro</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Tech Mechanical')">B.Tech Mechanical</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Tech Civil')">B.Tech Civil</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Tech AI/ML')">B.Tech AI / Machine Learning</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Tech Aerospace')">B.Tech Aerospace</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Tech Biotech')">B.Tech Biotechnology</div>
+
+                <!-- Group 2 -->
+                <div class="dropdown-group-title">Medical & Bio</div>
+                <div class="dropdown-item" onclick="chooseCourse('MBBS')">MBBS Clinical</div>
+                <div class="dropdown-item" onclick="chooseCourse('BDS')">BDS Dental Surgery</div>
+                <div class="dropdown-item" onclick="chooseCourse('BAMS')">BAMS Ayurvedic Practice</div>
+                <div class="dropdown-item" onclick="chooseCourse('BHMS')">BHMS Homeopathic Medic</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Sc Nursing')">B.Sc Nursing</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Pharm')">B.Pharm Pharmacology</div>
+                <div class="dropdown-item" onclick="chooseCourse('BPT')">BPT Physiotherapy</div>
+
+                <!-- Group 3 -->
+                <div class="dropdown-group-title">Sciences</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Sc Physics')">B.Sc Physics</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Sc Chemistry')">B.Sc Chemistry</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Sc Maths')">B.Sc Mathematics</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Sc Biology')">B.Sc Biological Sciences</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Sc CS')">B.Sc Computer Science</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Sc Agriculture')">B.Sc Agriculture</div>
+
+                <!-- Group 4 -->
+                <div class="dropdown-group-title">Commerce & Business</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Com General')">B.Com General</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Com Hons')">B.Com Honours</div>
+                <div class="dropdown-item" onclick="chooseCourse('BBA')">BBA Business Administration</div>
+                <div class="dropdown-item" onclick="chooseCourse('BMS')">BMS Management Studies</div>
+
+                <!-- Group 5 -->
+                <div class="dropdown-group-title">Arts & Media</div>
+                <div class="dropdown-item" onclick="chooseCourse('BA Sanskrit Vyakaran')">BA Sanskrit Vyakaran</div>
+                <div class="dropdown-item" onclick="chooseCourse('BA Hindi Literature')">BA Hindi Literature</div>
+                <div class="dropdown-item" onclick="chooseCourse('BA History')">BA History</div>
+                <div class="dropdown-item" onclick="chooseCourse('BA Political Science')">BA Political Science</div>
+                <div class="dropdown-item" onclick="chooseCourse('BA Economics')">BA Economics</div>
+                <div class="dropdown-item" onclick="chooseCourse('BA Psychology')">BA Psychology</div>
+                <div class="dropdown-item" onclick="chooseCourse('BA English')">BA English Literature</div>
+                <div class="dropdown-item" onclick="chooseCourse('BA Sociology')">BA Sociology</div>
+                <div class="dropdown-item" onclick="chooseCourse('BJMC (Journalism)')">BJMC Communications</div>
+
+                <!-- Group 6 -->
+                <div class="dropdown-group-title">Law Studies</div>
+                <div class="dropdown-item" onclick="chooseCourse('LLB (3-yr)')">LLB (3-Year Standard)</div>
+                <div class="dropdown-item" onclick="chooseCourse('BA LLB (5-yr)')">BA LLB (5-Year Integrated)</div>
+                <div class="dropdown-item" onclick="chooseCourse('BBA LLB (5-yr)')">BBA LLB (5-Year Integrated)</div>
+
+                <!-- Group 7 -->
+                <div class="dropdown-group-title">Diplomas & Vocational</div>
+                <div class="dropdown-item" onclick="chooseCourse('Polytechnic Diploma')">Polytechnic Diploma (Engineering / Tech)</div>
+                <div class="dropdown-item" onclick="chooseCourse('Diploma in CS/IT')">Diploma in Computer Engineering / IT</div>
+                <div class="dropdown-item" onclick="chooseCourse('D.Ed / D.El.Ed')">D.Ed / Diploma in Elementary Education</div>
+                <div class="dropdown-item" onclick="chooseCourse('D.Pharm')">D.Pharm (Diploma in Pharmacy)</div>
+                <div class="dropdown-item" onclick="chooseCourse('Diploma in Nursing')">Diploma in Nursing (GNM / ANM)</div>
+                <div class="dropdown-item" onclick="chooseCourse('Diploma in Business Admin')">Diploma in Business Administration</div>
+                <div class="dropdown-item" onclick="chooseCourse('Diploma in Hotel Management')">Diploma in Hotel Management & Catering</div>
+                <div class="dropdown-item" onclick="chooseCourse('Diploma in Digital Marketing')">Diploma in Digital Marketing</div>
+                <div class="dropdown-item" onclick="chooseCourse('Diploma in Design')">Diploma in Fashion / Graphic Design</div>
+
+                <!-- Group 8: Postgraduate Studies -->
+                <div class="dropdown-group-title">Postgraduate Studies</div>
+                <div class="dropdown-item" onclick="chooseCourse('MBA / PGDM')">MBA / PGDM (Business Management)</div>
+                <div class="dropdown-item" onclick="chooseCourse('M.Tech')">M.Tech (Master of Technology)</div>
+                <div class="dropdown-item" onclick="chooseCourse('MCA')">MCA (Master of Computer Applications)</div>
+                <div class="dropdown-item" onclick="chooseCourse('M.Sc Physics/Chemistry')">M.Sc Physics / Chemistry</div>
+                <div class="dropdown-item" onclick="chooseCourse('M.Sc Mathematics')">M.Sc Mathematics</div>
+                <div class="dropdown-item" onclick="chooseCourse('M.Sc CS/IT')">M.Sc Computer Science / IT</div>
+                <div class="dropdown-item" onclick="chooseCourse('MA History/PolSci')">MA History / Political Science</div>
+                <div class="dropdown-item" onclick="chooseCourse('MA Economics/Psychology')">MA Economics / Psychology</div>
+                <div class="dropdown-item" onclick="chooseCourse('MA English')">MA English Literature</div>
+                <div class="dropdown-item" onclick="chooseCourse('M.Com')">M.Com (Master of Commerce)</div>
+
+                <!-- Group 9: Other Professional -->
+                <div class="dropdown-group-title">Other Professional</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Des')">B.Des Illustration / UX Design</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Arch')">B.Arch Architecture</div>
+                <div class="dropdown-item" onclick="chooseCourse('BHM')">BHM Hotel Management</div>
+                <div class="dropdown-item" onclick="chooseCourse('BFA')">BFA Fine Arts</div>
+                <div class="dropdown-item" onclick="chooseCourse('B.Ed')">B.Ed Professional Education</div>
+                <div class="dropdown-item" onclick="chooseCourse('Other')">Other (Specify Below)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hidden input for "Other" course selection -->
+          <div class="form-group" id="other-course-wrapper" style="display: none;">
+            <label class="field-label" for="custom-other-course">Please specify your degree name</label>
+            <input type="text" id="custom-other-course" class="text-input" placeholder="e.g. Master of Science (M.Sc) Geography">
+          </div>
+
+          <div class="form-group">
+            <label class="field-label" for="degree-grade">Cumulative CGPA or overall percentages</label>
+            <input type="text" id="degree-grade" class="text-input" placeholder="e.g. 8.4 CGPA or 82%">
+          </div>
+
+          <div id="step3-validation-alert" class="validation-alert">Kindly ensure all input credentials are formatted.</div>
+
+          <div class="button-group">
+            <button class="btn btn-secondary" onclick="goToStep(2)">← Back</button>
+            <button class="btn btn-primary" onclick="validateAndSaveStep3_Degree()">Continue →</button>
+          </div>
+        `;
+      }
+      card.innerHTML = html;
+    }
+
+    // Toggle button active states for examination boards
+    function toggleBoardBtn(btn, boardType) {
+      document.querySelectorAll(".board-btn").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      userProfile.board = boardType;
+    }
+
+    // Force score validations
+    function validateScoreRange(input) {
+      const val = parseFloat(input.value);
+      if (val < 0) input.value = 0;
+      if (val > 100) input.value = 100;
+    }
+
+    // Course dropdown UI togglers
+    function showCourseDropdown() {
+      document.getElementById("grouped-course-options").style.display = "block";
+    }
+
+    function hideCourseDropdown() {
+      setTimeout(() => {
+        document.getElementById("grouped-course-options").style.display = "none";
+      }, 250);
+    }
+
+    function filterCourseDropdown(term) {
+      const items = document.querySelectorAll(".dropdown-item");
+      const cleanTerm = term.toLowerCase().trim();
+      
+      items.forEach(it => {
+        if (cleanTerm === "" || it.textContent.toLowerCase().includes(cleanTerm)) {
+          it.style.display = "block";
+        } else {
+          it.style.display = "none";
+        }
+      });
+    }
+
+    function chooseCourse(course) {
+      document.getElementById("custom-course-search").value = course;
+      userProfile.degreeCourse = course;
+      
+      const otherWrapper = document.getElementById("other-course-wrapper");
+      if (course === "Other") {
+        otherWrapper.style.display = "block";
+      } else {
+        otherWrapper.style.display = "none";
+      }
+      
+      hideCourseDropdown();
+    }
+
+    // Click outside to hide searchable course dropdown
+    document.addEventListener("click", (e) => {
+      const dropdown = document.getElementById("grouped-course-options");
+      const searchBox = document.getElementById("custom-course-search");
+      if (dropdown && searchBox && !dropdown.contains(e.target) && e.target !== searchBox) {
+        dropdown.style.display = "none";
+      }
+    });
+
+    // Sub-render marks forms based on selected stream in Class 12th
+    function toggleMarksFormBasedOnStream(streamValue) {
+      userProfile.stream = streamValue;
+      const stage = document.getElementById("stream-dynamic-marks-substage");
+      let formHtml = "";
+
+      if (streamValue === "PCM") {
+        formHtml = `
+          <p class="field-label" style="margin-top: 10px; margin-bottom: 12px;">Subject Percentages</p>
+          <div class="marks-grid">
+            <div class="marks-item"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">Physics</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="Physics" min="0" max="100" placeholder="85" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+            <div class="marks-item"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">Chemistry</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="Chemistry" min="0" max="100" placeholder="80" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+            <div class="marks-item"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">Mathematics</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="Mathematics" min="0" max="100" placeholder="90" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+            <div class="marks-item"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">English</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="English" min="0" max="100" placeholder="88" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+          </div>
+        `;
+      }
+      else if (streamValue === "PCB") {
+        formHtml = `
+          <p class="field-label" style="margin-top: 10px; margin-bottom: 12px;">Subject Percentages</p>
+          <div class="marks-grid">
+            <div class="marks-item"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">Physics</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="Physics" min="0" max="100" placeholder="80" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+            <div class="marks-item"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">Chemistry</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="Chemistry" min="0" max="100" placeholder="82" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+            <div class="marks-item"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">Biology</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="Biology" min="0" max="100" placeholder="91" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+            <div class="marks-item"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">English</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="English" min="0" max="100" placeholder="87" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+          </div>
+        `;
+      }
+      else if (streamValue === "PCMB") {
+        formHtml = `
+          <p class="field-label" style="margin-top: 10px; margin-bottom: 12px;">Subject Percentages</p>
+          <div class="marks-grid">
+            <div class="marks-item"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">Physics</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="Physics" min="0" max="100" placeholder="82" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+            <div class="marks-item"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">Chemistry</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="Chemistry" min="0" max="100" placeholder="80" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+            <div class="marks-item"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">Mathematics</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="Mathematics" min="0" max="100" placeholder="88" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+            <div class="marks-item"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">Biology</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="Biology" min="0" max="100" placeholder="85" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+            <div class="marks-item" style="grid-column: span 2;"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">English</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="English" min="0" max="100" placeholder="84" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+          </div>
+        `;
+      }
+      else if (streamValue === "Commerce+Maths") {
+        formHtml = `
+          <p class="field-label" style="margin-top: 10px; margin-bottom: 12px;">Subject Percentages</p>
+          <div class="marks-grid">
+            <div class="marks-item"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">Accountancy</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="Accountancy" min="0" max="100" placeholder="88" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+            <div class="marks-item"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">Business Studies</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="Business Studies" min="0" max="100" placeholder="84" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+            <div class="marks-item"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">Economics</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="Economics" min="0" max="100" placeholder="85" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+            <div class="marks-item"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">Mathematics</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="Mathematics" min="0" max="100" placeholder="80" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+            <div class="marks-item" style="grid-column: span 2;"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">English</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="English" min="0" max="100" placeholder="90" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+          </div>
+        `;
+      }
+      else if (streamValue === "Commerce-Maths") {
+        formHtml = `
+          <p class="field-label" style="margin-top: 10px; margin-bottom: 12px;">Subject Percentages</p>
+          <div class="marks-grid">
+            <div class="marks-item"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">Accountancy</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="Accountancy" min="0" max="100" placeholder="85" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+            <div class="marks-item"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">Business Studies</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="Business Studies" min="0" max="100" placeholder="88" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+            <div class="marks-item"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">Economics</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="Economics" min="0" max="100" placeholder="83" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+            <div class="marks-item"><label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">English</label><div class="marks-input-wrapper"><input type="number" class="text-input stream-mark-elem" data-sub="English" min="0" max="100" placeholder="86" oninput="validateScoreRange(this)"><span class="percent-sign">%</span></div></div>
+          </div>
+        `;
+      }
+      else if (streamValue === "Arts") {
+        formHtml = `
+          <p class="field-label" style="margin-top: 10px; margin-bottom: 4px;">Choose 3 to 5 elective subjects</p>
+          <p class="subtitle-text" style="font-size: 0.8rem; margin-bottom: 12px;">Enter marks only for papers chosen.</p>
+          <div class="arts-checkboxes">
+            <label class="checkbox-card" id="ck-card-history"><input type="checkbox" onchange="toggleArtsSubjectMarkField('History', this.checked)"> History</label>
+            <label class="checkbox-card" id="ck-card-polsci"><input type="checkbox" onchange="toggleArtsSubjectMarkField('Political Science', this.checked)"> Political Sci</label>
+            <label class="checkbox-card" id="ck-card-psych"><input type="checkbox" onchange="toggleArtsSubjectMarkField('Psychology', this.checked)"> Psychology</label>
+            <label class="checkbox-card" id="ck-card-geo"><input type="checkbox" onchange="toggleArtsSubjectMarkField('Geography', this.checked)"> Geography</label>
+            <label class="checkbox-card" id="ck-card-socio"><input type="checkbox" onchange="toggleArtsSubjectMarkField('Sociology', this.checked)"> Sociology</label>
+            <label class="checkbox-card" id="ck-card-econ"><input type="checkbox" onchange="toggleArtsSubjectMarkField('Economics', this.checked)"> Economics</label>
+            <label class="checkbox-card" id="ck-card-eng"><input type="checkbox" onchange="toggleArtsSubjectMarkField('English', this.checked)"> English</label>
+            <label class="checkbox-card" id="ck-card-hindi"><input type="checkbox" onchange="toggleArtsSubjectMarkField('Hindi', this.checked)"> Hindi</label>
+            <label class="checkbox-card" id="ck-card-sanskrit"><input type="checkbox" onchange="toggleArtsSubjectMarkField('Sanskrit', this.checked)"> Sanskrit</label>
+            <label class="checkbox-card" id="ck-card-philosophy"><input type="checkbox" onchange="toggleArtsSubjectMarkField('Philosophy', this.checked)"> Philosophy</label>
+            <label class="checkbox-card" id="ck-card-fine"><input type="checkbox" onchange="toggleArtsSubjectMarkField('Fine Arts', this.checked)"> Fine Arts</label>
+            <label class="checkbox-card" id="ck-card-legal"><input type="checkbox" onchange="toggleArtsSubjectMarkField('Legal Studies', this.checked)"> Legal Studies</label>
+            <label class="checkbox-card" id="ck-card-informatics"><input type="checkbox" onchange="toggleArtsSubjectMarkField('Informatics Practices', this.checked)"> Informatics Practices</label>
+          </div>
+          <div class="marks-grid" id="arts-marks-input-grid"></div>
+        `;
+      }
+
+      stage.innerHTML = formHtml;
+      document.getElementById("honesty-check-container").style.display = "block";
+    }
+
+    // Dynamic checkboxes response logic for arts
+    function toggleArtsSubjectMarkField(subjectName, isChecked) {
+      const grid = document.getElementById("arts-marks-input-grid");
+      const subId = "arts-mark-" + subjectName.toLowerCase().replace(/ /g, "-");
+      
+      const ckCard = document.querySelector(`.checkbox-card[id*="${subjectName.toLowerCase().split(' ')[0]}"]`);
+      if (ckCard) {
+        if (isChecked) ckCard.classList.add("checked");
+        else ckCard.classList.remove("checked");
+      }
+
+      if (isChecked) {
+        const item = document.createElement("div");
+        item.className = "marks-item";
+        item.id = "wrapper-" + subId;
+        item.innerHTML = `
+          <label class="field-label" style="font-size: 0.8rem; color: var(--text-muted);">${subjectName}</label>
+          <div class="marks-input-wrapper">
+            <input type="number" class="text-input stream-mark-elem" data-sub="${subjectName}" min="0" max="100" placeholder="85" oninput="validateScoreRange(this)">
+            <span class="percent-sign">%</span>
+          </div>
+        `;
+        grid.appendChild(item);
+      } else {
+        const ext = document.getElementById("wrapper-" + subId);
+        if (ext) ext.remove();
+      }
+    }
+
+    // Honesty Selector response logic
+    function selectHonesty(status, btn) {
+      document.querySelectorAll(".honesty-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      
+      userProfile.honestyCheck = status;
+      const replay = document.getElementById("honesty-reply");
+      
+      if (status === "honest") {
+        replay.innerHTML = "We love a scholar. Moving on.";
+      } else {
+        replay.innerHTML = "Good job being honest. That's already a great quality.";
+      }
+
+      document.getElementById("btn-step3-next").disabled = false;
+    }
+
+    // Validation checks inside Step 3 formulas
+    function validateAndSaveStep3_10th() {
+      const math = document.getElementById("mark-math").value.trim();
+      const science = document.getElementById("mark-science").value.trim();
+      const english = document.getElementById("mark-english").value.trim();
+      const social = document.getElementById("mark-social").value.trim();
+      const lang = document.getElementById("mark-lang").value.trim();
+      const alertDiv = document.getElementById("step3-validation-alert");
+
+      if (!math || !science || !english || !social || !lang) {
+        alertDiv.style.display = "block";
+        return;
+      }
+
+      userProfile.marks = {
+        Mathematics: parseFloat(math),
+        Science: parseFloat(science),
+        English: parseFloat(english),
+        "Social Science": parseFloat(social),
+        Regional: parseFloat(lang)
+      };
+
+      // Auto-detect strongest paper
+      let strongest = "Mathematics";
+      let highestVal = userProfile.marks.Mathematics;
+      for (let s in userProfile.marks) {
+        if (userProfile.marks[s] > highestVal) {
+          highestVal = userProfile.marks[s];
+          strongest = s;
+        }
+      }
+      userProfile.strongestSubject = strongest;
+
+      alertDiv.style.display = "none";
+      goToStep(4);
+    }
+
+    function validateAndSaveStep3_12th() {
+      const selector = document.getElementById("stream-selector");
+      const alertDiv = document.getElementById("step3-validation-alert");
+
+      if (!userProfile.stream) {
+        alertDiv.style.display = "block";
+        return;
+      }
+
+      const scoreElements = document.querySelectorAll(".stream-mark-elem");
+      let allPassed = true;
+      let tempMarks = {};
+
+      if (userProfile.stream === "Arts") {
+        if (scoreElements.length < 3 || scoreElements.length > 5) {
+          alertDiv.textContent = "Please choose between 3 to 5 elective subjects.";
+          alertDiv.style.display = "block";
+          return;
+        }
+      }
+
+      scoreElements.forEach(el => {
+        const subject = el.getAttribute("data-sub");
+        const valStr = el.value.trim();
+        const val = parseFloat(valStr);
+
+        if (valStr === "" || isNaN(val) || val < 0 || val > 100) {
+          allPassed = false;
+        } else {
+          tempMarks[subject] = val;
+        }
+      });
+
+      if (!allPassed || Object.keys(tempMarks).length === 0) {
+        alertDiv.textContent = "Kindly complete all fields with scores between 0 and 100.";
+        alertDiv.style.display = "block";
+        return;
+      }
+
+      if (!userProfile.honestyCheck) {
+        alertDiv.textContent = "Kindly complete our honesty checkpoint before proceeding.";
+        alertDiv.style.display = "block";
+        return;
+      }
+
+      userProfile.marks = tempMarks;
+
+      // Auto-detect strongest
+      let strongest = "";
+      let highestVal = -1;
+      for (let s in userProfile.marks) {
+        if (userProfile.marks[s] > highestVal) {
+          highestVal = userProfile.marks[s];
+          strongest = s;
+        }
+      }
+      userProfile.strongestSubject = strongest;
+
+      alertDiv.style.display = "none";
+      goToStep(4);
+    }
+
+    function validateAndSaveStep3_Degree() {
+      const customCourse = document.getElementById("custom-course-search").value.trim();
+      const levelSelection = document.getElementById("degree-year").value;
+      const grade = document.getElementById("degree-grade").value.trim();
+      const alertDiv = document.getElementById("step3-validation-alert");
+
+      if (!customCourse || !grade) {
+        alertDiv.style.display = "block";
+        return;
+      }
+
+      userProfile.degreeYear = levelSelection;
+      
+      if (customCourse === "Other") {
+        const spec = document.getElementById("custom-other-course").value.trim();
+        if (!spec) {
+          alertDiv.textContent = "Please specify your degree name.";
+          alertDiv.style.display = "block";
+          return;
+        }
+        userProfile.degreeCourse = spec;
+      } else {
+        userProfile.degreeCourse = customCourse;
+      }
+
+      userProfile.degreeGrade = grade;
+      alertDiv.style.display = "none";
+      goToStep(4);
+    }
+
+    // ==========================================
+    // STEP 4: GOAL SELECTION
+    // ==========================================
+    function selectGoal(element) {
+      document.querySelectorAll("[data-step='4'] .option-card").forEach(el => el.classList.remove("selected"));
+      element.classList.add("selected");
+      userProfile.goal = element.getAttribute("data-goal");
+      document.getElementById("btn-step4-next").disabled = false;
+    }
+
+    function proceedToStep5() {
+      goToStep(5);
+    }
+
+    // ==========================================
+    // STEP 5: REFINE GOAL SELECTIONS
+    // ==========================================
+    function renderStep5Formula() {
+      const container = document.getElementById("step5-card-inner");
+      const goal = userProfile.goal;
+      const name = userProfile.name;
+      let html = "";
+
+      if (goal === "high_paying") {
+        html = `
+          <h2 class="decorated-h2">Which sector do you seek wealth in, ${name}?</h2>
+          <p class="subtitle-text">Refining which sector you align with determines specific target skillsets.</p>
+          
+          <div class="form-group">
+            <label class="field-label" for="refine-industry">Target Corporate Sector</label>
+            <select class="text-input" id="refine-industry">
+              <option value="Tech">Technology & Core Software (FAANG, SaaS)</option>
+              <option value="Finance">Quantitative Finance & Strategy (Investment Banking, Wealth)</option>
+              <option value="Consulting">Management Consulting & Strategy (MBB, Big 4)</option>
+              <option value="Healthcare">Healthcare Operations & Pharma Leadership</option>
+              <option value="Media">Media, Product Marketing & Growth</option>
+              <option value="Law">Corporate Legals, Arbitration & Litigations</option>
+              <option value="Other">Custom Sector / Niche Portfolios</option>
+            </select>
+          </div>
+
+          <div class="button-group">
+            <button class="btn btn-secondary" onclick="goToStep(4)">← Back</button>
+            <button class="btn btn-primary" onclick="saveStep5('refine-industry')">Complete Setup →</button>
+          </div>
+        `;
+      }
+      else if (goal === "startup") {
+        html = `
+          <h2 class="decorated-h2">What is the current velocity of your startup idea?</h2>
+          <p class="subtitle-text">The stage of your business dictates whether you need immediate capital or tech incubation.</p>
+
+          <div class="form-group">
+            <label class="field-label" for="refine-idea">Current Validation Stage</label>
+            <select class="text-input" id="refine-idea">
+              <option value="Clear">I have a clear MVP design & wireframes</option>
+              <option value="Rough">I have a broad concept of a problem, exploring solutions</option>
+              <option value="Exploring">I want to absorb venture principles and find an idea</option>
+            </select>
+          </div>
+
+          <div class="button-group">
+            <button class="btn btn-secondary" onclick="goToStep(4)">← Back</button>
+            <button class="btn btn-primary" onclick="saveStep5('refine-idea')">Complete Setup →</button>
+          </div>
+        `;
+      }
+      else if (goal === "switch") {
+        html = `
+          <h2 class="decorated-h2">Which sector do you wish to pivot into, ${name}?</h2>
+          <p class="subtitle-text">Lateral pivots are most robust when targeting industries with high structural overlap.</p>
+
+          <div class="form-group">
+            <label class="field-label" for="refine-target-field">Select Pivot Industry</label>
+            <select class="text-input" id="refine-target-field">
+              <option value="Data Science & ML">Data Science & AI Engineering</option>
+              <option value="Product Management">Product Management (Tech / Ops)</option>
+              <option value="Corporate Finance">Corporate Finance & Strategy</option>
+              <option value="Management & MBA">General Management (MBA Route)</option>
+              <option value="UX Design">Creative Experience (UI/UX Design)</option>
+              <option value="Corporate Law">Corporate Jurisprudence & Law</option>
+              <option value="Content & Creator Economy">Media, Communications & Creator Economy</option>
+            </select>
+          </div>
+
+          <div class="button-group">
+            <button class="btn btn-secondary" onclick="goToStep(4)">← Back</button>
+            <button class="btn btn-primary" onclick="saveStep5('refine-target-field')">Complete Setup →</button>
+          </div>
+        `;
+      }
+      else if (goal === "higher_studies") {
+        html = `
+          <h2 class="decorated-h2">Where do you visualize your research or Masters taking place?</h2>
+          <p class="subtitle-text">Financial budgets and specialized entry criteria vary massively between continents.</p>
+
+          <div class="form-group">
+            <label class="field-label" for="refine-studies-loc">Primary Location Goal</label>
+            <select class="text-input" id="refine-studies-loc" onchange="toggleStudiesCountryWrapper(this.value)">
+              <option value="India">India (IITs, IIMs, IISc, Top Central Academies)</option>
+              <option value="Abroad">Abroad (US, Europe, UK, Canada, Australia)</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="studies-country-wrapper" style="display: none;">
+            <label class="field-label" for="refine-studies-country">Which Global Territory?</label>
+            <select class="text-input" id="refine-studies-country">
+              <option value="USA">USA (Ivy League, STEM Extensions)</option>
+              <option value="Germany">Germany (Tuition-free Public Universities)</option>
+              <option value="UK">United Kingdom (Russell Group Prestige)</option>
+              <option value="Canada">Canada (Work-permit centric systems)</option>
+              <option value="Australia">Australia & NZ (Oceania systems)</option>
+              <option value="Other">Other Intercontinental Regions</option>
+            </select>
+          </div>
+
+          <div class="button-group">
+            <button class="btn btn-secondary" onclick="goToStep(4)">← Back</button>
+            <button class="btn btn-primary" onclick="saveStudiesGoal()">Complete Setup →</button>
+          </div>
+        `;
+      }
+      else if (goal === "govt") {
+        html = `
+          <h2 class="decorated-h2">Which Public Exam or cadre represents your target focus?</h2>
+          <p class="subtitle-text">Indian Public Service commissions represent highly distinct exam structures.</p>
+
+          <div class="form-group">
+            <label class="field-label" for="refine-govt-exam">Target Public Examination commission</label>
+            <select class="text-input" id="refine-govt-exam">
+              <option value="UPSC">UPSC Civil Services (IAS, IPS, IFS)</option>
+              <option value="SSC">SSC CGLE (Group B Central Services)</option>
+              <option value="Banking">Banking Cadre (IBPS PO, SBI Specialist)</option>
+              <option value="Railways">RRB & Public Infrastructure cadres</option>
+              <option value="NDA">NDA & Defence Commissioning (Army, Navy, Airforce)</option>
+              <option value="State PSC">State Public Service Commissions (PCS)</option>
+            </select>
+          </div>
+
+          <div class="button-group">
+            <button class="btn btn-secondary" onclick="goToStep(4)">← Back</button>
+            <button class="btn btn-primary" onclick="saveStep5('refine-govt-exam')">Complete Setup →</button>
+          </div>
+        `;
+      }
+      else if (goal === "abroad") {
+        html = `
+          <h2 class="decorated-h2">Which destination territory do you target?</h2>
+          <p class="subtitle-text">Pristine legal visas and job market density represent critical indicators abroad.</p>
+
+          <div class="form-group">
+            <label class="field-label" for="refine-abroad-dest">Select Priority Country</label>
+            <select class="text-input" id="refine-abroad-dest">
+              <option value="USA">United States (Uncapped High Capital ceilings)</option>
+              <option value="Germany">Germany & Central Europe (Low costs, tech strong)</option>
+              <option value="UK">United Kingdom (Global Strategy hubs)</option>
+              <option value="Canada">Canada (Express Entry immigration vectors)</option>
+              <option value="Australia">Australia & New Zealand (Balanced lifestyle & growth)</option>
+              <option value="Other">Other Global Territories</option>
+            </select>
+          </div>
+
+          <div class="button-group">
+            <button class="btn btn-secondary" onclick="goToStep(4)">← Back</button>
+            <button class="btn btn-primary" onclick="saveStep5('refine-abroad-dest')">Complete Setup →</button>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function toggleStudiesCountryWrapper(val) {
+      const box = document.getElementById("studies-country-wrapper");
+      if (val === "Abroad") {
+        box.style.display = "block";
+      } else {
+        box.style.display = "none";
+      }
+    }
+
+    function saveStep5(elementId) {
+      userProfile.refinedGoal = document.getElementById(elementId).value;
+      goToStep(6);
+    }
+
+    function saveStudiesGoal() {
+      const loc = document.getElementById("refine-studies-loc").value;
+      userProfile.refinedGoal = loc;
+      if (loc === "Abroad") {
+        userProfile.targetField = document.getElementById("refine-studies-country").value;
+      }
+      goToStep(6);
+    }
+
+    // ==========================================
+    // GUIDANCE GENERATION PIPELINE ENGINE
+    // ==========================================
+    function executeAdviceFormulation() {
+      // Show loading states and cycle logs
+      const panel = document.getElementById("loading-state");
+      const r_box = document.getElementById("results-dashboard");
+      panel.style.display = "block";
+      r_box.style.display = "none";
+
+      const h_log = document.getElementById("loading-headline");
+      const s_log = document.getElementById("loading-subline");
+
+      const sequence = [
+        { headline: "Sifting academic records...", subline: "Checking subject allocations and boards." },
+        { headline: "Correlating macro-economic pipelines...", subline: "Analyzing standard exam cycles in India." },
+        { headline: "Compiling personalized roadmap...", subline: "Calibrating financial and risk calibrations." }
+      ];
+
+      let count = 0;
+      const interval = setInterval(() => {
+        if (count < sequence.length) {
+          h_log.textContent = sequence[count].headline;
+          s_log.textContent = sequence[count].subline;
+          count++;
+        } else {
+          clearInterval(interval);
+          buildOutputDesign();
+        }
+      }, 700);
+    }
+
+    function buildOutputDesign() {
+      const db = formulateAdviceObject(userProfile);
+
+      // Map values to DOM
+      document.getElementById("res-what-i-see").innerHTML = db.whatISeeInYou;
+      
+      // Load Recommended Phase Elements
+      const pathBox = document.getElementById("res-recommended-path");
+      pathBox.innerHTML = `
+        <div class="timeline-phase">
+          <div class="phase-badge">Phase I: Next 3 Months</div>
+          <div class="phase-content">${db.path.months3}</div>
+        </div>
+        <div class="timeline-phase">
+          <div class="phase-badge">Phase II: Next 6 Months</div>
+          <div class="phase-content">${db.path.months6}</div>
+        </div>
+        <div class="timeline-phase">
+          <div class="phase-badge">Phase III: 1-Year Milestones</div>
+          <div class="phase-content">${db.path.year1}</div>
+        </div>
+        <div class="timeline-phase">
+          <div class="phase-badge">Phase IV: Long-term Outlook</div>
+          <div class="phase-content">${db.path.longTerm}</div>
+        </div>
+      `;
+
+      document.getElementById("res-financial").innerHTML = db.money;
+      document.getElementById("res-time-grit").innerHTML = db.grind;
+      document.getElementById("res-threats").innerHTML = db.risks;
+      document.getElementById("res-mentors-note").textContent = `"${db.note}"`;
+
+      // Display Dashboard
+      document.getElementById("loading-state").style.display = "none";
+      const r_box = document.getElementById("results-dashboard");
+      r_box.style.display = "block";
+      
+      // Dynamic fade-in on scroll simulation
+      r_box.classList.add("fade-in");
+    }
+
+    // =========================================================
+    // THE GENERAL COMBINATOR ADVISORY DECISION MATRIX
+    // =========================================================
+    function formulateAdviceObject(prof) {
+      let name = prof.name || "Scholar";
+      let strongest = prof.strongestSubject || "academic core";
+      let board = prof.board || "CBSE";
+      let lvl = prof.educationLevel;
+      let goal = prof.goal;
+      let refGoal = prof.refinedGoal;
+      let course = prof.degreeCourse || "degree";
+      let stream = prof.stream || "PCM";
+
+      // Dynamic builders for section 1 (What I See in You)
+      let academicInsight = "";
+      if (lvl === "10th") {
+        academicInsight = `Taking ${board} board, you have found an early focus. Your strength in ${strongest} points to strong intuitive pathways in analytical, conceptual domains. It dictates structural integrity and early academic leverage.`;
+      } else if (lvl === "12th" || lvl === "gap") {
+        academicInsight = `Having structured your focus into ${stream} under ${board}, you represent a tailored student portfolio. Your peak achievement in ${strongest} highlights a rare capacity for logical processing. Choosing specific domains isn't simply standard placement — it represents true intellectual alignment.`;
+      } else {
+        const isDiploma = lvl && lvl.includes("diploma");
+        academicInsight = isDiploma
+          ? `Pivoting through your diploma in ${course} (${prof.degreeGrade || "academic record"}), you hold a highly practical, specialized technical foundation. Your hands-on training and early real-world exposure position you perfectly for advanced lateral entry or direct industry validation.`
+          : `Pivoting through ${course} (${prof.degreeGrade || "academic record"}), you are holding a distinct professional license. Your graduate exposure has refined your concepts, positioning you far beyond theoretical high-school frameworks.`;
+      }
+
+      let goalAffirmation = "";
+      if (goal === "high_paying") {
+        goalAffirmation = `Targeting high-paying careers in ${refGoal} represents deep clarity. Securing capital early is a practical ambition that ensures personal autonomy and provides a foundation for global risk mitigation.`;
+      } else if (goal === "startup") {
+        goalAffirmation = `Looking to build a startup in validation stage '${refGoal}' shows an independent spirit. In the fast-moving Indian ecosystem, building SaaS or tech infrastructure represents the highest leverage of human capital.`;
+      } else if (goal === "switch") {
+        goalAffirmation = `Pivoting towards ${refGoal} requires significant courage. Modern Indian consulting and tech sectors are highly friendly to lateral, diverse profiles that blend non-traditional frameworks smoothly.`;
+      } else if (goal === "higher_studies") {
+        goalAffirmation = `Chasing higher scientific or management scholarship in ${refGoal} is highly prestigious. Indian competitive structures like GATE, CAT or global GRE/GMAT pathways are deeply institutional, preparing you for elite boardrooms.`;
+      } else if (goal === "govt") {
+        goalAffirmation = `Preparing for the prestigious ${refGoal} cadres shows a devotion to national administration. These offices command immense public scale and offer structural scope for genuine state-level contributions.`;
+      } else if (goal === "abroad") {
+        goalAffirmation = `Seeking a career or study route in ${refGoal || "global shores"} is a bold, horizon-expanding vision. It pushes you to absorb diverse multicultural systems and build wealth at scale.`;
+      }
+
+      let whatISee = `Dear ${name}, ${academicInsight} ${goalAffirmation} You represent a focused mind, and your strategic choices are highly valid.`;
+
+      // Core Roadmap, Budget, and Risk Dictionary
+      // Formulating compact yet rich advisor templates
+      let path = { months3: "", months6: "", year1: "", longTerm: "" };
+      let money = "";
+      let grind = "";
+      let risks = "";
+      let note = `${name}, remember that institutional scores do not define human craft. Focus on deep work, and calibrate your daily efforts to compound exponentially.`;
+
+      // program-based route branching
+      if (lvl === "10th") {
+        path.months3 = `Acclimatize to High-School core concepts: Finish foundational work. Focus on expanding quantitative logic and comprehension depth. Explore PCM, PCB, or Commerce alignments.`;
+        path.months6 = `Formulate Stream Strategy: Finalize Class 11-12 stream selections. If targeting tech, secure Computer Science / Applied Math electives. If healthcare, biology options must override.`;
+        path.year1 = `Set National Competitive Benchmarks: Align standard school curricula with early foundational materials for relevant national entrances like JEE or NEET prep (if choosing science) or IPMAT (for management).`;
+        path.longTerm = `Keep elective horizons open. The goal of Class 11/12 is strictly getting comfortable with intense study volumes while maintaining perfect school CGPAs or CBSE percentages.`;
+        
+        money = `₹15,000 – ₹50,000 for standard reference materials or core subject books; ₹60,000 – ₹2,50,000 per year for high school board fees and localized tuition dependencies.`;
+        grind = `3 to 5 hours of diligent daily studying. Academic success in secondary school is less about sheer exhaustion and more about forming persistent, healthy neural pathways.`;
+        risks = `Over-specialization too early. Ensure you do not neglect English and language humanities, as premium communication skills are the ultimate ceiling of elite corporate placements.`;
+        note = `You are standing on a pristine starting block, ${name}. Choose streams out of pure alignment with your strongest subjects, not out of societal panic.`;
+      } 
+      else if (lvl === "gap") {
+        path.months3 = `Calibrate Re-entry focus: Analyze prior examination performances in granular detail. Target specific chapters causing logical friction. Formulate an absolute, non-negotiable schedule.`;
+        path.months6 = `Attack Core Examinations: Prepare heavily with daily mock papers. Crack competitive targets (such as JEE Main/Advanced, NEET, or BBA IPMAT/CUET). Keep auxiliary institutional registration ready.`;
+        path.year1 = `Secure Admissions & Reset: Step onto a Tier-1 college campus. Focus on maintaining a stellar GPA right from Semester 1 and build standard computing / finance competencies.`;
+        path.longTerm = `Turn your gap-year grit into a professional advantage. Recruiters heavily respect candidates who demonstrate resilience, high self-reliance, and systematic recovery.`;
+
+        money = `₹30,000 – ₹1,20,000 for premium competitive test-series or specific specialized drop-coaching. College allocations vary between ₹1,00,000/yr (Govt) and ₹3,50,000/yr (Private).`;
+        grind = `8 to 11 hours of surgical exam preparation daily. Self-discipline during a gap year requires strict separation of digital distractions and absolute physical focus.`;
+        risks = `Isolating your mental health and falling into despair. Have a hard backup option (e.g. state-level private schools or dynamic BCA/BSc courses) ready by month 4 to keep leverage.`;
+        note = `There is zero shame in taking a step back to measure the architecture of the leap, ${name}. History remembers the successful re-entry, not the brief pause.`;
+      }
+      else if (lvl === "12th") {
+        // Stream PCM Branch
+        if (stream === "PCM") {
+          if (goal === "high_paying" || goal === "startup" || goal === "abroad") {
+            path.months3 = `Master Code fundamentals: Secure admissions in B.Tech CS, IT, or computational software paths. Excel at standard math electives and write simple Python scripts. Prep for JEE/BITSAT.`;
+            path.months6 = `Initiate Data Structures: Crack admissions and start college. Immediately dive into standard structural programming language (C++ or Java) and handle linked lists, recursion.`;
+            path.year1 = `Build MVP or Portfolio: Assemble 3 dynamic full-stack projects using React and Node.js. Join student development clubs and apply for summer early-stage startups as an intern.`;
+            path.longTerm = `Maintain a clean 8.5+ CGPA while practicing DSA daily on LeetCode. Pitch custom SaaS MVPs to standard accelerators (Antler/YC) or target high-income offshore remote roles.`;
+            
+            money = `₹1,20,000 – ₹2,50,000 per year for standard B.Tech/BCA training. Private engineering systems like BITS, VIT require up to ₹4,00,000 – ₹6,00,000 per year.`;
+            grind = `4 to 6 hours of coding / portfolio compilation daily once high school boards settle. Tech skill acquisition relies heavily on trial and error.`;
+            risks = `Getting comfortable in passive university curriculum logic and missing out on actual active project creation. Never rely on traditional campus placements alone.`;
+          } else { // Govt or studies
+            path.months3 = `Focus on high boards output: Secure 90%+ in high school boards. Build baseline quantitative and logical reasoning blocks for exams like IAS/IPS (UPSC) or CAT.`;
+            path.months6 = `Target Premier Central Universities: Prepare for CUET or national research entries. Seek admissions in prestigious colleges like DU (SRCC/LSR), IITs, or IISERs.`;
+            path.year1 = `Assemble High-End Core Foundations: Master mathematical modeling or public administration cores. Join debating societies to build articulate presentation capacities.`;
+            path.longTerm = `Calibrate for competitive GATE / UPSC/ CAT entries in your final year. Maintain a stellar academic sheet to ensure strong core profile selection indicators.`;
+
+            money = `₹50,000 – ₹1,50,000 for standard coaching, reference resources, and mock series. Government university tuitions are highly subsidized, averaging ₹15,000/yr.`;
+            grind = `6 to 8 hours of analytical, reading-intense studying. Reading complex government gazettes or dense academic journals must become secondary nature.`;
+            risks = `Sinking multiple attempts in state-level examinations without building solid parallel industrial certifications. Always maintain a strong professional fallback.`;
+          }
+        }
+        // Stream PCB / PCMB Branch
+        else if (stream === "PCB" || stream === "PCMB") {
+          if (goal === "govt" || goal === "higher_studies" || goal === "high_paying") {
+            path.months3 = `NEET Execution & Core Prep: Maxout core preparation for biology and organic chemistry parameters. Crack NEET UG or parallel premier Allied health programs (AIIMS B.Sc).`;
+            path.months6 = `Anchor medical admissions: Secure MBBS, BDS, BAMS or premier biomedical sciences positions. Initiate fundamental osteology, histologies, or genetic structures.`;
+            path.year1 = `Consolidate medical concepts: Balance rigorous academic schedules with clinical observation hours. Learn critical diagnostics and pharmacologies.`;
+            path.longTerm = `Prepare for NEET PG / Next core medical standard licensing. Specialize heavily in diagnostics, surgery, other high-paying vectors, or venture into medical consultation.`;
+
+            money = `₹50,000 to ₹1,50,000 for competitive test preps. Subsidized government college loops are ₹10,000 – ₹50,000 per year; private clinics cost ₹8,00,000 – ₹25,000,000 in total.`;
+            grind = `10 to 12 hours of deep medical mugging and lab work. Medical curricula present the highest cognitive density load of any academic track in India.`;
+            risks = `Targeting private MBBS models without financial caution, or neglecting NEET PG timelines. If MD/MS is too long, explore parallel premium health consulting options.`;
+          } else {
+            path.months3 = `Explore Bio-tech & Agri-tech crossovers: Initiate entry preparations for CUET or specialized science schools. Pivot towards high-income biochemistry interfaces.`;
+            path.months6 = `Secure modern research seats: Enter B.Tech Biotech, Biomedical Engineering, or elite B.Sc. fields in premier universities. Start coding simple computational biology.`;
+            path.year1 = `Build research portfolios: Publish simple lab reports or register local intellectual property. Learn computational data handling (R or python packages).`;
+            path.longTerm = `Target high-end Research fellowships or healthcare startup ecosystems. Balance science parameters with deep tech data skills to capture maximum leverage.`;
+
+            money = `₹1,00,000 – ₹3,00,000 per year for modern bio-tech research degrees. Lab materials and specialized certifications require additional micro-budgets.`;
+            grind = `6 to 8 hours of intense research and quantitative programming. Pure science domain pivots depend heavily on specialized technical skills.`;
+            risks = `Getting stuck in pure academic theory without building hands-on modern engineering data skills. Always learn software tools alongside natural sciences.`;
+          }
+        }
+        // Commerce & Arts Branch
+        else {
+          if (goal === "high_paying" || goal === "startup" || goal === "abroad") {
+            path.months3 = `Ace Premier Commercial Appraisals: Pivot and crack CUET, IPMAT (IIM Indore/Rohtak), or CLAT examinations to enter premium Tier-1 networks.`;
+            path.months6 = `Establish Professional Credential Baselines: Enter SRCC, LSR, IIM Integrated Programs, or NLUs. Register for early CA Foundation or CFA Level I modules.`;
+            path.year1 = `Build corporate frameworks: Compile internships in commercial advisory firms, corporate litigators, or branding agencies. Master high-level Excel modeling and pitch books.`;
+            path.longTerm = `Work towards managing investment portfolios, corporate law firms, or luxury tech strategies. Combine core finance/commerce with high-end digital automation.`;
+
+            money = `₹50,000 to ₹1,50,000 for premium CA, IPMAT or CLAT coaching material. Undergrad courses range from ₹20,000/yr (DU) to ₹4,00,000/yr (IIM/Privates).`;
+            grind = `5 to 7 hours of strategic problem-solving and macroeconomic modeling. Corporate networking requires structural fluency and elite communication skills.`;
+            risks = `Relying on ordinary general graduate programs without building premium personal branding portfolios or taking top professional exams.`;
+          } else { // Govt / civil
+            path.months3 = `Master academic boards: Target outstanding high school board results to establish strong credentials. Read newspaper editorials to identify political frameworks.`;
+            path.months6 = `Admit into core analytical fields: Enter elite BA programs in History, Economics, or Political Science at top-tier liberal arts universities like DU, JNU, or Presidency.`;
+            path.year1 = `Formulate UPSC/State Civil prep structure: Align standard academic semesters with IAS optional structures. Dedicate hours to deep answer writing.`;
+            path.longTerm = `Execute UPSC Civil Services or State Public examinations with high technical precision. Build multiple alternative fallbacks like LLB, MBA, or academic fellowships.`;
+
+            money = `₹30,000 to ₹1,50,000 for UPSC coaching, dynamic general studies materials, and regular, high-quality test-series formats.`;
+            grind = `8 to 10 hours daily of extensive current affairs research and analytical answer processing. Consolidating wide-ranging topics demands high focus.`;
+            risks = `Spending too many years chasing the UPSC dream without building basic career backups. Dedicate a maximum of 3 attempts before executing fallbacks.`;
+          }
+        }
+      }
+      else { // College Student / Completed Graduate Level
+        if (prof.degreeCourse.includes("B.Tech") || prof.degreeCourse.includes("B.Sc CS")) {
+          if (goal === "high_paying") {
+            path.months3 = `Attack DSA & System Designs: Dive deep into algorithmic complexities (Leetcode medium, standard graph algorithms, dynamic programming) and OOP paradigms.`;
+            path.months6 = `Build system projects & mock: Build 2 production-ready system backends using Node, Docker, or Golang. Practice extensive tech interviewing structures.`;
+            path.year1 = `Secure tech roles: Crack lateral industry hiring, remote off-campus drives, or high-level placement loops. Master API architecture configurations.`;
+            path.longTerm = `Consolidate code architecture expertise. Pursue senior engineering, tech lead, or product manager pathways at FAANG, top fintech firms, or European tech agencies.`;
+
+            money = `₹10,000 – ₹50,000 for strategic cloud credits, AWS certificates, and top software development tools.`;
+            grind = `3 to 5 hours of highly concentrated coding daily. Focus on solving 2 high-quality algorithmic challenges and building actual system products.`;
+            risks = `Getting stuck on simple code templates without building actual, complex system architectures. Do not ignore database indexation and server caching systems.`;
+          } else if (goal === "startup") {
+            path.months3 = `Launch MVP prototype: Build a fast, lightweight SaaS mockup using serverless platforms. Validate critical consumer friction points on Twitter or LinkedIn.`;
+            path.months6 = `Acquire beta partners & funding: Apply for Y-Combinator, Antler, and micro-VC incubators. Secure immediate user feedback channels.`;
+            path.year1 = `Scale tech platforms & team: Refine systems, run scale pipelines, and bring on a technical or operational co-founder.`;
+            path.longTerm = `Establish a stable Indian tech business, explore Series A fundings, or plan profitable corporate acquisitions.`;
+
+            money = `₹20,000 – ₹1,00,000 for infrastructure setups, APIs, domain logistics, and validation marketing campaigns.`;
+            grind = `Full mental saturation. Moving a startup from zero to one requires 80+ weekly hours of engineering, customer service, and strategic planning.`;
+            risks = `Over-engineering a beautiful product that absolutely nobody wants to pay for. Prioritize user conversations over beautiful code architecture early on.`;
+          } else { // Switch or studies or govt
+            path.months3 = `Formulate professional transition markers: Study the quantitative syllabus for CAT (Business MBA) or prepare your portfolio for top tech transitions.`;
+            path.months6 = `Sit for core transition exams: Take CAT, GMAT, or GRE with intense discipline. Target elite institutions (IIM ABC, XLRI, ISB, or premier Ivy leagues).`;
+            path.year1 = `Execute Pivot Strategy: Adapt to corporate business structures, financial operations, or consulting methodologies. Take consulting internships.`;
+            path.longTerm = `Operate as a Senior Product Manager, Investment Associate, or Corporate Strategy Director in premier consulting networks.`;
+
+            money = `₹50,000 – ₹2,00,000 for premium CAT/GMAT instruction material and masterclasses. College budgets range from ₹16,00,000 to ₹25,00,000 in top-tier IIMs.`;
+            grind = `4 to 6 hours of high-intensity diagnostic tests, quantitative problem solving, and corporate case discussions.`;
+            risks = `Entering general, low-ranked MBA or secondary Masters programs. Elite consulting opportunities are heavily concentrated in Tier-1 colleges.`;
+          }
+        }
+        else if (prof.degreeCourse.includes("MBBS") || prof.degreeCourse.includes("BDS") || prof.degreeCourse.includes("Medical")) {
+          path.months3 = `Focus on INI-CET / NEET PG: Master academic clinical diagnostics, internal medicines, and pediatrics parameters. Create highly concentrated flashcards.`;
+          path.months6 = `Execute Postgraduate Entrance: Secure clinical seats or explore alternative healthcare pipelines like clinical administration.`;
+          path.year1 = `Adapt to high-pressure clinical duties: Master specialized surgical or treatment diagnostics, and clinical operations.`;
+          path.longTerm = `Build clinical specialties or launch boutique, high-value consulting clinics. Explore global licensing systems like USMLE or PLAB if aiming abroad.`;
+
+          money = `₹50,000 – ₹1,20,000 for specialized clinical coaching. Subsidized government PG residencies are highly lucrative, paying good stipends.`;
+          grind = `10 to 14 hours of demanding clinical shifts and diagnostic studies. Maintaining robust stamina is a core requirement for medical careers.`;
+          risks = `Getting isolated in low-value, non-accredited private clinical networks. Always prioritize clinical research and continuous licensing.`;
+        }
+        else { // General BCom, BA, Sciences, BBA, Law
+          if (goal === "govt") {
+            path.months3 = `UPSC / State PSC execution framework: Align high-quality syllabus materials, select humanities Optionals, and write deep daily GS answers.`;
+            path.months6 = `Attack Prelims and Mains: Take extensive mock tests under strict timed conditions. Solve historic CSAT papers.`;
+            path.year1 = `Consolidate credentials: Prepare for personal interviews. If selected, prepare for specialized training (LBSNAA). If not, initiate immediate backups.`;
+            path.longTerm = `Lead prestigious public sector departments, run district administrations, or drive major public infrastructure policies.`;
+
+            money = `₹40,000 – ₹1,20,000 for comprehensive civil services coaching, current affairs subscriptions, and test evaluation programs.`;
+            grind = `8 to 11 hours of intensive reading, logic processing, and analytical writing daily.`;
+            risks = `Chasing UPSC indefinitely without a backup. Set a hard limit of 3 tries, then execute high-value fallbacks like an LLB or an MBA.`;
+          } else { // Corporate, switch, high paying
+            path.months3 = `Build specialized technical spikes: Acquire advanced corporate credentials like CFA (Finance), CLAT PG (Law), or specialized data-analytics tracks.`;
+            path.months6 = `Target Tier-1 Management entries: Prepare heavily for the CAT / GMAT. Secure high percentiles to leverage your academic diversity during admissions calls.`;
+            path.year1 = `Secure high-intensity internships: Go after high-value consultancy positions, financial advisory roles, or international project management.`;
+            path.longTerm = `Ascend into executive portfolios, manage venture investments, or lead strategic teams in elite multinationals.`;
+
+            money = `₹40,000 – ₹1,80,000 for international professional exams like CFA or top MBA coaching. Master's tuitions range from ₹2,00,000 to ₹22,00,000 in premium Indian business schools.`;
+            grind = `4 to 6 hours daily of strategic modeling, economic case resolution, and high-impact verbal preps.`;
+            risks = `Relying on generic graduate resumes. Focus on building specialized, quantitative hard skills like algorithmic data modeling or corporate tax law.`;
+          }
+        }
+      }
+
+      // Check for extremely rare or complex combinations, override note elegantly if found
+      if (prof.educationLevel === "degree_completed" && prof.goal === "switch" && prof.degreeCourse.includes("Other")) {
+        note = `This path you're considering is so unique that we should check your details manually. Please reach out directly to Mayank on Instagram @mayank.rz1 so we can map out a highly tailored clinical or creative strategy.`;
+      }
+
+      return {
+        whatISeeInYou: whatISee,
+        path: path,
+        money: money,
+        grind: grind,
+        risks: risks,
+        note: note
+      };
+    }
+
+    // Process Startover cleanings
+    function restartCoreProcess() {
+      // Clear RAM and Cache
+      userProfile = {
+        name: "",
+        educationLevel: "",
+        board: "",
+        stream: "",
+        marks: {},
+        strongestSubject: "",
+        honestyCheck: "",
+        degreeYear: "",
+        degreeCourse: "",
+        degreeGrade: "",
+        goal: "",
+        refinedGoal: "",
+        targetField: ""
+      };
+      
+      localStorage.removeItem("pathfinder_profile");
+      localStorage.removeItem("pathfinder_step");
+      
+      currentStep = 1;
+      
+      // Reset inputs
+      document.getElementById("user-name").value = "";
+      document.getElementById("btn-step2-next").disabled = true;
+      document.getElementById("btn-step4-next").disabled = true;
+      
+      // Reset Selected option designs
+      document.querySelectorAll(".option-card").forEach(el => el.classList.remove("selected"));
+      
+      // Go back to Welcome form
+      document.querySelectorAll(".step-container").forEach(el => el.classList.remove("active"));
+      const welcome = document.querySelector(".step-container[data-step='1']");
+      welcome.classList.add("active");
+      welcome.style.opacity = "1";
+      welcome.style.transform = "translateY(0)";
+      
+      // Resetdots
+      document.querySelectorAll(".progress-dot").forEach((dot, idx) => {
+        dot.className = idx === 0 ? "progress-dot active" : "progress-dot";
+      });
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  </script>
+</body>
+</html>
